@@ -1,7 +1,7 @@
 package com.bank.BankApp.service;
 
 import java.util.List;
-import java.util.stream.Collectors; 
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.bank.BankApp.DTO.AddMoneyRequest;
@@ -22,12 +22,16 @@ public class DashboardService {
         this.transactionRepo = transactionRepo;
     }
 
-    public DashboardResponse getDashboard() {
-        // ID 1L se account check karega, agar nahi mila toh empty response/dummy set karega bina crash huye
-        Account account = accountRepo.findById(1L).orElse(null);
-        double currentBalance = (account != null) ? account.getBalance() : 0.0;
+    // 1. Dynamic getDashboard method using accountId
+    public DashboardResponse getDashboard(Long accountId) {
+        // Kisi specific accountId ke basis par account dhoondenge
+        Account account = accountRepo.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account Not Found"));
+                
+        double currentBalance = account.getBalance();
 
-        List<Transaction> transactions = transactionRepo.findAll();
+        // Pura findAll() karne ke bajaye sirf is particular account ke transactions nikalenge
+        List<Transaction> transactions = transactionRepo.findByAccountId(accountId);
 
         double totalCredit = transactions.stream()
                 .filter(t -> "CREDIT".equals(t.getType()) || "TRANSFER_CREDIT".equals(t.getType()))
@@ -53,19 +57,18 @@ public class DashboardService {
         return response;
     }
 
+    // 2. Add Money method using dynamic accountId
     @Transactional
     public void addMoney(AddMoneyRequest request) {
-        Account account = accountRepo.findById(1L)
-                .orElseThrow(() -> new RuntimeException("Default Account Not Found"));
+        // Request object se direct accountId fetch karenge (AddMoneyRequest DTO me long accountId field add kar lena)
+        Account account = accountRepo.findById(request.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Account Not Found"));
 
         account.setBalance(account.getBalance() + request.getAmount());
         accountRepo.save(account);
 
-        // Actual Entity constructor parameter mapping ke hisab se pass kiya hai:
-        // Transaction(String type, Double amount, String status, Account account)
         Transaction transaction = new Transaction("CREDIT", request.getAmount(), "SUCCESS", account);
         transactionRepo.save(transaction);
     }
 }
-
 

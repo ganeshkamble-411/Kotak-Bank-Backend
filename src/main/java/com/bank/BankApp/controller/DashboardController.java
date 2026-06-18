@@ -1,17 +1,11 @@
 package com.bank.BankApp.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.bank.BankApp.DTO.AddMoneyRequest;
 import com.bank.BankApp.DTO.DashboardResponse;
 import com.bank.BankApp.service.DashboardService;
-
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -24,9 +18,10 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
 
-    @GetMapping
-    public ResponseEntity<DashboardResponse> getDashboard() {
-        DashboardResponse response = dashboardService.getDashboard();
+    // Path Variable ke sath get dashboard API taaki alag-alag users ka data mile
+    @GetMapping("/{accountId}")
+    public ResponseEntity<DashboardResponse> getDashboard(@PathVariable Long accountId) {
+        DashboardResponse response = dashboardService.getDashboard(accountId);
         return ResponseEntity.ok(response);
     }
 
