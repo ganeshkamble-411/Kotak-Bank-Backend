@@ -1,5 +1,4 @@
 package com.bank.BankApp.controller;
-
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.bank.BankApp.DTO.LoginRequest;
 import com.bank.BankApp.DTO.RegisterRequest;
+import com.bank.BankApp.DTO.ResetPasswordRequest; // 👈 Naya DTO import kiya
 import com.bank.BankApp.entity.Account;
 import com.bank.BankApp.entity.User;
 import com.bank.BankApp.repository.AccountRepository;
@@ -35,6 +35,21 @@ public class AuthController {
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         String response = authService.register(request);
         return ResponseEntity.ok(response);
+    }
+
+    // 🔑 1. Endpoint: Bina kisi security question ke DIRECT password reset karne ke liye
+    @PostMapping("/forgot-password-reset")
+    public ResponseEntity<?> forgotPasswordReset(@RequestBody ResetPasswordRequest request) {
+        try {
+            // AuthService ke direct reset pipeline ko hit kiya
+            String msg = authService.resetPasswordDirectly(request);
+            return ResponseEntity.ok(Map.of("status", "SUCCESS", "message", msg));
+        } catch (IllegalArgumentException e) {
+            // Agar email database me nahi milta toh 400 Bad Request jayega cleaner error message ke sath
+            return ResponseEntity.status(400).body(Map.of("status", "FAILED", "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("status", "FAILED", "message", "Internal Server Error"));
+        }
     }
 
     @PostMapping("/login")
@@ -63,6 +78,5 @@ public class AuthController {
         return ResponseEntity.status(401).body(Map.of("status", "FAILED", "message", response));
     }
 }
-
 
 
